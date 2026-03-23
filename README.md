@@ -181,7 +181,9 @@ Durante o desenvolvimento, alguns desafios contribuíram para o aprendizado:
 ## 🌐 PROJETO ONLINE
 
 <p>
-  🔗 <a href="#" target="_blank"><strong>Em breve</strong></a>
+  🔗 <a href="https://stock-control-api-f7em.onrender.com" target="_blank">
+    <strong>Acessar API online</strong>
+  </a>
 </p>
 
 ---
@@ -232,5 +234,6 @@ http://localhost:3000
 ---
 
 ## 📌 STATUS DO PROJETO:
+![Badge Concluído](https://img.shields.io/static/v1?label=STATUS&message=CONCLU%C3%8DDO&color=brightgreen&style=for-the-badge)
 
-![Badge Em Desenvolvimento](https://img.shields.io/static/v1?label=STATUS\&message=EM%20DESENVOLVIMENTO\&color=yellow\&style=for-the-badge)
+***
