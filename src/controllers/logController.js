@@ -12,5 +12,7 @@ exports.buscarPorData = (req, res) => {
     return dataLog === data;
   });
 
+  console.log(logs);
+
   res.json(filtrados);
 };
