@@ -3,9 +3,14 @@ const logs = require('../data/logs');
 exports.buscarPorData = (req, res) => {
   const { data } = req.query;
 
-  const filtrados = logs.filter(log =>
-    log.data.startsWith(data)
-  );
+  if (!data) {
+    return res.status(400).json({ erro: "Informe a data no formato YYYY-MM-DD" });
+  }
+
+  const filtrados = logs.filter(log => {
+    const dataLog = new Date(log.data).toISOString().split('T')[0];
+    return dataLog === data;
+  });
 
   res.json(filtrados);
 };
