@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { login } = require('../controllers/authController');
 
-router.post('/logar', login);
+// POST /logar — rota pública, não precisa de authMiddleware
+router.post('/', login);
 
 module.exports = router;

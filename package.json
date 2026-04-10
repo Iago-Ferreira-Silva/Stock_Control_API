@@ -4,8 +4,8 @@
   "description": "API REST desenvolvida em Node.js para gerenciamento de estoque, contendo autenticação, controle de itens, middlewares personalizados e geração de relatórios em PDF. Projeto acadêmico com foco em boas práticas de desenvolvimento backend.",
   "main": "index.js",
   "scripts": {
-  "dev": "nodemon src/app.js"
-},
+    "dev": "nodemon src/app.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Iago-Ferreira-Silva/Stock_Control_API.git"
@@ -20,6 +20,7 @@
   "homepage": "https://github.com/Iago-Ferreira-Silva/Stock_Control_API#readme",
   "dependencies": {
     "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "pdfkit": "^0.18.0"
