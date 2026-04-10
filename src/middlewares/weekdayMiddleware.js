@@ -1,8 +1,10 @@
 module.exports = (req, res, next) => {
-  const dia = new Date().getDay();
+  const diaDaSemana = new Date().getDay(); // 0 = domingo, 6 = sábado
 
-  if (dia === 0 || dia === 6) {
-    return res.status(403).json({ erro: "Acesso permitido apenas de segunda a sexta" });
+  if (diaDaSemana === 0 || diaDaSemana === 6) {
+    return res.status(403).json({
+      erro: 'Acesso permitido apenas de segunda a sexta-feira',
+    });
   }
 
   next();
