@@ -41,7 +41,7 @@ exports.criar = async (req, res) => {
         return res.status(400).json({ erro: 'Array vazio' });
       }
 
-      const itens = await Item.insertMany(dados);
+      const itens = await Item.insertMany(dados, { runValidators: true });
       return res.status(201).json(itens);
     }
 
