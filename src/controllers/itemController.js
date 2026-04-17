@@ -1,71 +1,70 @@
-const items = require('../data/items');
+const Item = require('../models/Item');
 
 // Listar todos
-exports.listar = (req, res) => {
-  res.json(items);
+exports.listar = async (req, res) => {
+  try {
+    // find() sem filtro retorna todos os documentos da coleção
+    const items = await Item.find();
+    res.json(items);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar itens' });
+  }
 };
 
 // Criar item
-exports.criar = (req, res) => {
-  // .trim() remove espaços do início e do fim, evitando nomes como "  "
-  const nome = req.body.nome?.trim();
-  const preco = req.body.preco;
+exports.criar = async (req, res) => {
+  try {
+    const { nome, preco } = req.body;
 
-  if (!nome) {
-    return res.status(400).json({ erro: 'O campo "nome" é obrigatório' });
+    // O Mongoose já valida nome e preco pelo Schema — se faltar, cai no catch
+    const novoItem = await Item.create({ nome, preco });
+
+    res.status(201).json(novoItem);
+  } catch (erro) {
+    // Erro de validação do Mongoose (campo obrigatório faltando, preço negativo, etc.)
+    if (erro.name === 'ValidationError') {
+      const mensagens = Object.values(erro.errors).map(e => e.message);
+      return res.status(400).json({ erro: mensagens.join(', ') });
+    }
+    res.status(500).json({ erro: 'Erro ao criar item' });
   }
-
-  // Garante que o preço é um número positivo, não uma string ou negativo
-  if (preco === undefined || typeof preco !== 'number' || preco <= 0) {
-    return res.status(400).json({ erro: 'O campo "preco" deve ser um número positivo' });
-  }
-
-  const novoItem = {
-    // Gera o próximo ID de forma segura — se a lista estiver vazia, começa em 1
-    id: items.length > 0 ? items[items.length - 1].id + 1 : 1,
-    nome,
-    preco,
-  };
-
-  items.push(novoItem);
-
-  res.status(201).json(novoItem);
 };
 
 // Buscar por ID
-exports.buscar = (req, res) => {
-  // req.params.id chega como string — Number() converte para número
-  const id = Number(req.params.id);
+exports.buscar = async (req, res) => {
+  try {
+    // findById usa o _id do MongoDB (ex: "6627a3f...")
+    const item = await Item.findById(req.params.id);
 
-  // Se o id não for um número válido (ex: /itens/abc), retorna 400
-  if (isNaN(id)) {
-    return res.status(400).json({ erro: 'O ID deve ser um número' });
+    if (!item) {
+      return res.status(404).json({ erro: 'Item não encontrado' });
+    }
+
+    res.json(item);
+  } catch (erro) {
+    // CastError acontece quando o ID não tem o formato válido do MongoDB
+    if (erro.name === 'CastError') {
+      return res.status(400).json({ erro: 'ID inválido' });
+    }
+    res.status(500).json({ erro: 'Erro ao buscar item' });
   }
-
-  const item = items.find(i => i.id === id);
-
-  if (!item) {
-    return res.status(404).json({ erro: 'Item não encontrado' });
-  }
-
-  res.json(item);
 };
 
 // Deletar item
-exports.deletar = (req, res) => {
-  const id = Number(req.params.id);
+exports.deletar = async (req, res) => {
+  try {
+    // findByIdAndDelete busca e já deleta em uma operação só
+    const item = await Item.findByIdAndDelete(req.params.id);
 
-  if (isNaN(id)) {
-    return res.status(400).json({ erro: 'O ID deve ser um número' });
+    if (!item) {
+      return res.status(404).json({ erro: 'Item não encontrado' });
+    }
+
+    res.json({ mensagem: 'Item removido com sucesso' });
+  } catch (erro) {
+    if (erro.name === 'CastError') {
+      return res.status(400).json({ erro: 'ID inválido' });
+    }
+    res.status(500).json({ erro: 'Erro ao deletar item' });
   }
-
-  const index = items.findIndex(item => item.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({ erro: 'Item não encontrado' });
-  }
-
-  items.splice(index, 1);
-
-  res.json({ mensagem: 'Item removido com sucesso' });
 };
