@@ -81,6 +81,47 @@ exports.buscar = async (req, res) => {
   }
 };
 
+// Atualizar item
+exports.atualizar = async (req, res) => {
+  try {
+    const { nome, preco } = req.body;
+
+    // Monta apenas os campos que foram enviados — se mandar só o nome,
+    // o preço não é apagado. Se mandar só o preço, o nome fica intacto.
+    const dadosAtualizados = {};
+    if (nome !== undefined) dadosAtualizados.nome = nome.trim();
+    if (preco !== undefined) dadosAtualizados.preco = preco;
+
+    if (Object.keys(dadosAtualizados).length === 0) {
+      return res.status(400).json({ erro: 'Informe ao menos um campo para atualizar (nome ou preco)' });
+    }
+
+    const item = await Item.findByIdAndUpdate(
+      req.params.id,
+      dadosAtualizados,
+      {
+        new: true,           // Retorna o item JÁ atualizado, não o antigo
+        runValidators: true, // Aplica as validações do Schema (preco > 0, nome obrigatório)
+      }
+    );
+
+    if (!item) {
+      return res.status(404).json({ erro: 'Item não encontrado' });
+    }
+
+    res.json(item);
+  } catch (erro) {
+    if (erro.name === 'CastError') {
+      return res.status(400).json({ erro: 'ID inválido' });
+    }
+    if (erro.name === 'ValidationError') {
+      const mensagens = Object.values(erro.errors).map(e => e.message);
+      return res.status(400).json({ erro: mensagens.join(', ') });
+    }
+    res.status(500).json({ erro: 'Erro ao atualizar item' });
+  }
+};
+
 // Deletar item
 exports.deletar = async (req, res) => {
   try {
