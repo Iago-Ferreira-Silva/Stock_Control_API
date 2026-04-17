@@ -140,3 +140,35 @@ exports.deletar = async (req, res) => {
     res.status(500).json({ erro: 'Erro ao deletar item' });
   }
 };
+
+// Upload de imagem
+exports.uploadImagem = async (req, res) => {
+  try {
+    // req.file é preenchido pelo multer após o upload para o Cloudinary
+    if (!req.file) {
+      return res.status(400).json({ erro: 'Nenhuma imagem foi enviada' });
+    }
+
+    // req.file.path contém a URL pública da imagem no Cloudinary
+    const item = await Item.findByIdAndUpdate(
+      req.params.id,
+      { imagem: req.file.path },
+      { new: true }
+    );
+
+    if (!item) {
+      return res.status(404).json({ erro: 'Item não encontrado' });
+    }
+
+    res.json({
+      mensagem: 'Imagem enviada com sucesso',
+      imagem: item.imagem,
+      item,
+    });
+  } catch (erro) {
+    if (erro.name === 'CastError') {
+      return res.status(400).json({ erro: 'ID inválido' });
+    }
+    res.status(500).json({ erro: 'Erro ao fazer upload da imagem' });
+  }
+};
