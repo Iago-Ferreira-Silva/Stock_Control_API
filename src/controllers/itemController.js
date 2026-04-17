@@ -100,7 +100,7 @@ exports.atualizar = async (req, res) => {
       req.params.id,
       dadosAtualizados,
       {
-        new: true,           // Retorna o item JÁ atualizado, não o antigo
+        returnDocument: 'after',           // Retorna o item JÁ atualizado, não o antigo
         runValidators: true, // Aplica as validações do Schema (preco > 0, nome obrigatório)
       }
     );
@@ -153,7 +153,7 @@ exports.uploadImagem = async (req, res) => {
     const item = await Item.findByIdAndUpdate(
       req.params.id,
       { imagem: req.file.path },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!item) {
