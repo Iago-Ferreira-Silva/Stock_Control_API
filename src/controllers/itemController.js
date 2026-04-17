@@ -1,39 +1,70 @@
-const Item = require('../models/Item');
+const Item = require('../models/item');
 
 // Listar todos
 exports.listar = async (req, res) => {
   try {
-    // find() sem filtro retorna todos os documentos da coleção
-    const items = await Item.find();
+    const { nome, precoMin, precoMax } = req.query;
+
+    let filtro = {};
+
+    if (nome) {
+      filtro.nome = { $regex: nome, $options: 'i' };
+    }
+
+    if (precoMin || precoMax) {
+      filtro.preco = {};
+      if (precoMin) filtro.preco.$gte = Number(precoMin);
+      if (precoMax) filtro.preco.$lte = Number(precoMax);
+    }
+
+    const items = await Item.find(filtro);
+
     res.json(items);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar itens' });
   }
 };
 
-// Criar item
+// Criar item(s)
 exports.criar = async (req, res) => {
   try {
-    const { nome, preco } = req.body;
+    const dados = req.body;
 
-    // O Mongoose já valida nome e preco pelo Schema — se faltar, cai no catch
+    // Validação básica
+    if (!dados || typeof dados !== 'object') {
+      return res.status(400).json({ erro: 'Formato inválido' });
+    }
+
+    // Criar vários
+    if (Array.isArray(dados)) {
+      if (dados.length === 0) {
+        return res.status(400).json({ erro: 'Array vazio' });
+      }
+
+      const itens = await Item.insertMany(dados);
+      return res.status(201).json(itens);
+    }
+
+    // Criar um
+    const { nome, preco } = dados;
+
     const novoItem = await Item.create({ nome, preco });
 
     res.status(201).json(novoItem);
+
   } catch (erro) {
-    // Erro de validação do Mongoose (campo obrigatório faltando, preço negativo, etc.)
     if (erro.name === 'ValidationError') {
       const mensagens = Object.values(erro.errors).map(e => e.message);
       return res.status(400).json({ erro: mensagens.join(', ') });
     }
-    res.status(500).json({ erro: 'Erro ao criar item' });
+
+    res.status(500).json({ erro: 'Erro ao criar item(ns)' });
   }
 };
 
 // Buscar por ID
 exports.buscar = async (req, res) => {
   try {
-    // findById usa o _id do MongoDB (ex: "6627a3f...")
     const item = await Item.findById(req.params.id);
 
     if (!item) {
@@ -42,10 +73,10 @@ exports.buscar = async (req, res) => {
 
     res.json(item);
   } catch (erro) {
-    // CastError acontece quando o ID não tem o formato válido do MongoDB
     if (erro.name === 'CastError') {
       return res.status(400).json({ erro: 'ID inválido' });
     }
+
     res.status(500).json({ erro: 'Erro ao buscar item' });
   }
 };
@@ -53,7 +84,6 @@ exports.buscar = async (req, res) => {
 // Deletar item
 exports.deletar = async (req, res) => {
   try {
-    // findByIdAndDelete busca e já deleta em uma operação só
     const item = await Item.findByIdAndDelete(req.params.id);
 
     if (!item) {
@@ -65,6 +95,7 @@ exports.deletar = async (req, res) => {
     if (erro.name === 'CastError') {
       return res.status(400).json({ erro: 'ID inválido' });
     }
+
     res.status(500).json({ erro: 'Erro ao deletar item' });
   }
 };
