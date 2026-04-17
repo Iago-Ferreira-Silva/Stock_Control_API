@@ -1,4 +1,4 @@
-require('dotenv').config(); // Carrega o .env ANTES de tudo — essa linha precisa ser a primeira
+require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
@@ -11,28 +11,53 @@ const logRoutes = require('./routes/logRoutes');
 const loggerMiddleware = require('./middlewares/loggerMiddleware');
 const weekdayMiddleware = require('./middlewares/weekdayMiddleware');
 
-// Conecta ao MongoDB assim que o servidor inicia
 conectar();
 
 const app = express();
 
-app.use(cors());
+// CORS
+// Lista de origens que podem fazer requisições para esta API.
+const origensPermitidas = [
+  'http://localhost:3000',
+  'https://stock-control-api-f7em.onrender.com',
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permite requisições sem origin (Postman, curl, apps mobile)
+    if (!origin) return callback(null, true);
+
+    if (origensPermitidas.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Origem não permitida pelo CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Middlewares globais
 app.use(express.json());
 app.use(loggerMiddleware);
 
+// Rota raiz
 app.get('/', (req, res) => {
   res.json({ mensagem: 'Stock Control API 🚀', status: 'online' });
 });
 
+// Rotas
 app.use('/logar', authRoutes);
 app.use(weekdayMiddleware);
 app.use(itemRoutes);
 app.use(logRoutes);
 
+// 404
 app.use((req, res) => {
   res.status(404).json({ erro: 'Rota não encontrada' });
 });
 
+// Erro global
 app.use((err, req, res, next) => {
   console.error('[ERRO INTERNO]', err.message);
   res.status(500).json({ erro: 'Erro interno no servidor' });
