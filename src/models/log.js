@@ -13,7 +13,6 @@ const logSchema = new mongoose.Schema(
   },
   {
     // timestamps: true cria os campos createdAt e updatedAt automaticamente.
-    // Vamos usar o createdAt como a "data" do log — sem precisar salvar manualmente.
     timestamps: true,
   },
 );

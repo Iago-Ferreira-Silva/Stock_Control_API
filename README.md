@@ -1,7 +1,7 @@
 # 📦 Stock Control API
 
 <p align="center">
-  API REST desenvolvida para <strong>gerenciamento de estoque de produtos</strong>, com autenticação JWT, middlewares personalizados e geração de relatórios em PDF.<br/>
+  API REST desenvolvida para <strong>gerenciamento de estoque de produtos</strong>, com autenticação JWT, segundo fator de autenticação por email, upload de imagens em nuvem, cálculo de distância geográfica e geração de relatórios em PDF.<br/>
   Desenvolvida com <code>Node.js</code>, <code>Express</code> e <code>JavaScript</code>.
 </p>
 
@@ -9,7 +9,11 @@
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white"/>
   <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white"/>
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"/>
+  <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"/>
   <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Resend-000000?style=for-the-badge&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Jest-C21325?style=for-the-badge&logo=jest&logoColor=white"/>
   <img src="https://img.shields.io/badge/PDFKit-FF0000?style=for-the-badge"/>
 </p>
 
@@ -18,15 +22,20 @@
 ## ✨ FUNCIONALIDADES
 
 * 🔐 Autenticação com geração de token JWT (padrão Bearer)
-* 📦 Listagem de produtos
-* ➕ Cadastro de novos produtos com validação de dados
+* 📧 Segundo fator de autenticação (2FA) com código enviado por email via Resend
+* 🔒 Senhas criptografadas no banco com bcrypt
+* 📦 Listagem de produtos com filtro por nome e faixa de preço
+* ➕ Cadastro de um ou vários produtos simultaneamente
+* ✏️ Atualização de produtos via rota PUT
 * ❌ Remoção de produtos
 * 🔍 Busca de produto por ID
+* 🖼️ Upload de imagem para o Cloudinary vinculada ao produto
 * 📅 Middleware que restringe acesso de segunda a sexta
-* 🕒 Registro automático de logs de requisições
+* 🕒 Registro automático de logs de requisições no MongoDB
 * 📊 Consulta de logs por data com validação de formato
-* 📄 Geração de relatório em PDF formatado com lista de produtos
-* ⚡ API leve com dados mockados em memória
+* 📍 Cálculo de distância entre dois pontos geográficos pela fórmula de Haversine
+* 📄 Geração de relatório em PDF com lista de produtos do banco
+* ✅ Testes automatizados com Jest e Supertest para todas as rotas
 
 ---
 
@@ -35,24 +44,43 @@
 ```bash
 stock-control-api/
 ├── src/
+│   ├── config/
+│   │   └── upload.js
 │   ├── controllers/
 │   │   ├── authController.js
+│   │   ├── distanciaController.js
 │   │   ├── itemController.js
 │   │   └── logController.js
+│   ├── database/
+│   │   └── conexao.js
 │   ├── middlewares/
 │   │   ├── authMiddleware.js
-│   │   ├── weekdayMiddleware.js
-│   │   └── loggerMiddleware.js
+│   │   ├── loggerMiddleware.js
+│   │   └── weekdayMiddleware.js
+│   ├── models/
+│   │   ├── codigo.js
+│   │   ├── item.js
+│   │   ├── log.js
+│   │   └── usuario.js
 │   ├── routes/
 │   │   ├── authRoutes.js
+│   │   ├── distanciaRoutes.js
 │   │   ├── itemRoutes.js
 │   │   └── logRoutes.js
+│   ├── scripts/
+│   │   ├── criarAdmin.js
+│   │   └── atualizarAdmin.js
 │   ├── services/
+│   │   ├── emailService.js
 │   │   └── pdfService.js
-│   ├── data/
-│   │   ├── items.js
-│   │   └── logs.js
-│   └── app.js
+│   ├── app.js
+│   └── server.js
+├── tests/
+│   ├── auth.test.js
+│   ├── distancia.test.js
+│   ├── items.test.js
+│   ├── logs.test.js
+│   └── setup.js
 ├── .env.example
 ├── .gitignore
 ├── package.json
@@ -65,22 +93,29 @@ stock-control-api/
 
 * `Node.js` — Ambiente de execução JavaScript no servidor
 * `Express` — Framework para construção da API REST
+* `MongoDB + Mongoose` — Banco de dados em nuvem e ODM
+* `bcrypt` — Criptografia de senhas
 * `jsonwebtoken` — Geração e validação de tokens JWT
+* `Resend` — Envio de emails para o segundo fator de autenticação
+* `Cloudinary + Multer` — Upload e armazenamento de imagens em nuvem
 * `PDFKit` — Geração de arquivos PDF em memória
-* `cors` — Permite que frontends externos acessem a API
+* `cors` — Controle de origens permitidas
+* `Jest + Supertest` — Testes automatizados das rotas
 * `Nodemon` — Reinicia automaticamente o servidor em desenvolvimento
 
 ---
 
 ## 🔐 AUTENTICAÇÃO E SEGURANÇA
 
-* Rota de login com validação de campos obrigatórios
-* Geração de token JWT com validade de 1 hora
-* Middleware de autenticação com suporte ao padrão `Bearer <token>`
+* Login em dois passos com segundo fator de autenticação por email (2FA)
+* Código de verificação com validade de 10 minutos, descartado após o uso
+* Senhas armazenadas como hash bcrypt (salt rounds: 10)
+* Token JWT com validade de 1 hora no padrão `Bearer <token>`
 * Mensagens de erro distintas para token expirado vs. token inválido
-* JWT_SECRET configurável via variável de ambiente (`.env`)
-* Controle de acesso por dias da semana (segunda a sexta)
-* Registro de logs de todas as requisições recebidas
+* `JWT_SECRET` configurável via variável de ambiente
+* CORS configurado para permitir apenas origens autorizadas
+* Acesso bloqueado aos finais de semana pelo `weekdayMiddleware`
+* Logs de todas as requisições persistidos no MongoDB
 
 ---
 
@@ -88,23 +123,34 @@ stock-control-api/
 
 ### 🔹 Autenticação — pública
 
+**Passo 1 — Enviar credenciais:**
 ```
 POST /logar
 ```
-
-**Body:**
 ```json
 {
   "email": "admin@email.com",
   "senha": "123456"
 }
 ```
+Resposta:
+```json
+{ "mensagem": "Código de verificação enviado para o seu email" }
+```
 
-**Resposta:**
+**Passo 2 — Verificar código recebido por email:**
+```
+POST /logar/verificar
+```
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIs..."
+  "email": "admin@email.com",
+  "codigo": "472831"
 }
+```
+Resposta:
+```json
+{ "token": "eyJhbGciOiJIUzI1NiIs..." }
 ```
 
 ---
@@ -112,18 +158,30 @@ POST /logar
 ### 🔹 Produtos — protegidas (requer `Authorization: Bearer <token>`)
 
 ```
-GET    /itens
-POST   /itens
-GET    /itens/:id
-DELETE /itens/:id
+GET    /itens                    → lista todos (aceita ?nome= e ?precoMin= ?precoMax=)
+POST   /itens                    → cria um ou vários itens
+GET    /itens/:id                → busca por ID
+PUT    /itens/:id                → atualiza nome e/ou preço
+DELETE /itens/:id                → remove item
+POST   /itens/:id/imagem         → upload de imagem (form-data, campo: imagem)
 ```
 
-**Body para POST:**
+**Body para POST (item único):**
 ```json
-{
-  "nome": "Monitor",
-  "preco": 899.90
-}
+{ "nome": "Monitor", "preco": 899.90 }
+```
+
+**Body para POST (vários itens):**
+```json
+[
+  { "nome": "Teclado", "preco": 150 },
+  { "nome": "Mouse", "preco": 80 }
+]
+```
+
+**Body para PUT (campos opcionais):**
+```json
+{ "nome": "Monitor Ultrawide", "preco": 1299.90 }
 ```
 
 ---
@@ -132,6 +190,28 @@ DELETE /itens/:id
 
 ```
 GET /logs?data=YYYY-MM-DD
+```
+
+---
+
+### 🔹 Distância geográfica — protegida
+
+```
+GET /distancia?lat1=...&lon1=...&lat2=...&lon2=...
+```
+
+**Exemplo — Crato para Fortaleza:**
+```
+GET /distancia?lat1=-7.2306&lon1=-39.3167&lat2=-3.7172&lon2=-38.5431
+```
+
+Resposta:
+```json
+{
+  "pontoA": { "latitude": -7.2306, "longitude": -39.3167 },
+  "pontoB": { "latitude": -3.7172, "longitude": -38.5431 },
+  "distancia": { "km": 399.94, "metros": 399943 }
+}
 ```
 
 ---
@@ -147,43 +227,63 @@ GET /relatorio/pdf
 ## ⚙️ MIDDLEWARES
 
 ### 📅 Restrição por dia da semana (`weekdayMiddleware`)
-Bloqueia todas as rotas (exceto `/logar`) de sábado a domingo com status `403`.
+Bloqueia todas as rotas (exceto `/logar`) de sábado a domingo com status `403`. Ignorado automaticamente durante os testes.
 
 ### 🕒 Logger de requisições (`loggerMiddleware`)
-Registra rota, método HTTP e data/hora de cada requisição recebida.
+Registra rota, método HTTP e data/hora de cada requisição no MongoDB.
 
 ### 🔐 Autenticação (`authMiddleware`)
 Valida o token JWT no cabeçalho `Authorization` antes de liberar o acesso às rotas protegidas.
 
 ---
 
-## 💾 DADOS
+## ✅ TESTES AUTOMATIZADOS
 
-Todos os dados são mockados em memória (arrays JavaScript), sem banco de dados. Os dados voltam ao estado inicial quando o servidor é reiniciado.
+O projeto conta com testes automatizados usando **Jest** e **Supertest**, cobrindo todas as rotas da API.
+
+Para rodar os testes:
+```bash
+npm test
+```
+
+Resultado esperado:
+```
+Test Suites: 4 passed, 4 total
+Tests:       30 passed, 30 total
+```
+
+Os testes de itens criam documentos com prefixo `TESTE_JEST` e os removem após cada teste. O envio de email do 2FA é mockado — nenhum email real é disparado durante os testes.
 
 ---
 
 ## 🚧 DIFICULDADES ENCONTRADAS
 
-* 🔐 Implementação de autenticação JWT sem banco de dados
+* 🔐 Implementação de autenticação em dois fatores com código temporário
 * 🧠 Criação e encadeamento de middlewares personalizados
-* 🕒 Registro e filtragem de logs em memória
+* 🕒 Registro e filtragem de logs por fuso horário no MongoDB
 * 📄 Geração dinâmica de arquivos PDF com formatação monetária
-* 🔄 Organização em camadas (controllers, routes, services, middlewares)
-* ⚙️ Controle de acesso por dias da semana sem bloquear o login
-* 🚀 Deploy da aplicação na nuvem via Render
+* 🔄 Organização do projeto em camadas (controllers, routes, services, middlewares, models)
+* ☁️ Integração com serviços externos (MongoDB Atlas, Cloudinary, Resend)
+* ⚙️ Controle de acesso por dias da semana sem bloquear o login nem os testes
+* 🧪 Separação do `app.js` e `server.js` para viabilizar os testes com Jest
+* 🚀 Deploy e configuração de variáveis de ambiente no Render
 
 ---
 
 ## 🧠 APRENDIZADOS
 
 * Criação de APIs REST com Node.js e Express
+* Modelagem e persistência de dados com MongoDB e Mongoose
+* Autenticação com JWT e segundo fator de autenticação por email
+* Criptografia de senhas com bcrypt
+* Upload e armazenamento de imagens em nuvem com Cloudinary
+* Envio de emails transacionais com Resend
+* Cálculo de distância geográfica com a fórmula de Haversine
 * Implementação e encadeamento de middlewares
-* Autenticação baseada em token JWT com padrão Bearer
-* Manipulação de dados em memória
+* Configuração de CORS para controle de origens
+* Testes automatizados de APIs com Jest e Supertest
 * Estruturação de projetos backend em camadas
-* Geração de arquivos PDF dinamicamente
-* Deploy de aplicações Node.js
+* Deploy de aplicações Node.js com variáveis de ambiente no Render
 
 ---
 
@@ -213,10 +313,15 @@ npm install
 **3. Configure as variáveis de ambiente:**
 ```bash
 cp .env.example .env
-# Edite o .env e defina o JWT_SECRET
+# Edite o .env com suas credenciais
 ```
 
-**4. Execute em modo desenvolvimento:**
+**4. Crie o usuário admin no banco (apenas na primeira vez):**
+```bash
+node src/scripts/criarAdmin.js
+```
+
+**5. Execute em modo desenvolvimento:**
 ```bash
 npm run dev
 ```
@@ -226,13 +331,38 @@ A API estará disponível em:
 http://localhost:3000
 ```
 
+**6. Para rodar os testes:**
+```bash
+npm test
+```
+
+---
+
+## 🔑 VARIÁVEIS DE AMBIENTE
+
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+
+```env
+MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/stock_control
+JWT_SECRET=chave_gerada_com_crypto
+ADMIN_EMAIL=seu_email@gmail.com
+CLOUDINARY_CLOUD_NAME=seu_cloud_name
+CLOUDINARY_API_KEY=sua_api_key
+CLOUDINARY_API_SECRET=seu_api_secret
+RESEND_API_KEY=re_sua_chave_aqui
+EMAIL_REMETENTE=onboarding@resend.dev
+PORT=3000
+```
+
 ---
 
 ## 🔐 SEGURANÇA
 
-* Nenhuma credencial sensível está no código — use `.env` para o `JWT_SECRET`
-* O arquivo `.env` está listado no `.gitignore` e não deve ser commitado
-* Dados são totalmente mockados — sistema de autenticação para fins acadêmicos
+* Nenhuma credencial sensível está no código — tudo via `.env`
+* O arquivo `.env` está listado no `.gitignore` e não é commitado
+* Senhas armazenadas como hash bcrypt, nunca em texto puro
+* Token JWT com expiração de 1 hora
+* CORS restrito às origens autorizadas
 
 ---
 
