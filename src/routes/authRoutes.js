@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { login } = require('../controllers/authController');
+const { login, verificarCodigo } = require('../controllers/authController');
 
-// POST /logar — rota pública, não precisa de authMiddleware
+// Envia email e senha, recebe confirmação de envio do código
 router.post('/', login);
+
+// Envia o código recebido por email, recebe o token JWT
+router.post('/verificar', verificarCodigo);
 
 module.exports = router;
