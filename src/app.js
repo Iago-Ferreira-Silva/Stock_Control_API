@@ -7,6 +7,7 @@ const conectar = require('./database/conexao');
 const authRoutes = require('./routes/authRoutes');
 const itemRoutes = require('./routes/itemRoutes');
 const logRoutes = require('./routes/logRoutes');
+const distanciaRoutes = require('./routes/distanciaRoutes');
 
 const loggerMiddleware = require('./middlewares/loggerMiddleware');
 const weekdayMiddleware = require('./middlewares/weekdayMiddleware');
@@ -51,6 +52,7 @@ app.use('/logar', authRoutes);
 app.use(weekdayMiddleware);
 app.use(itemRoutes);
 app.use(logRoutes);
+app.use(distanciaRoutes);
 
 // 404
 app.use((req, res) => {
