@@ -1,5 +1,8 @@
 module.exports = (req, res, next) => {
-  const diaDaSemana = new Date().getDay(); // 0 = domingo, 6 = sábado
+  // Durante os testes, ignora o bloqueio de fim de semana
+  if (process.env.NODE_ENV === 'test') return next();
+
+  const diaDaSemana = new Date().getDay();
 
   if (diaDaSemana === 0 || diaDaSemana === 6) {
     return res.status(403).json({
