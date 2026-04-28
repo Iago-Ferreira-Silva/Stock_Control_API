@@ -345,7 +345,9 @@ Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 ```env
 MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/stock_control
 JWT_SECRET=chave_gerada_com_crypto
-ADMIN_EMAIL=seu_email@gmail.com
+ADMIN_EMAIL=seu_email@gmail.com        # email atual do admin
+ADMIN_EMAIL_OLD=email_antigo_aqui      # usado apenas no script atualizarAdmin.js
+ADMIN_PASSWORD=sua_senha_aqui          # usado apenas no script criarAdmin.js
 CLOUDINARY_CLOUD_NAME=seu_cloud_name
 CLOUDINARY_API_KEY=sua_api_key
 CLOUDINARY_API_SECRET=seu_api_secret
