@@ -3,33 +3,35 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Usuario = require('../models/usuario');
 
-// Este script atualiza o email do admin no banco.
-// Execute UMA VEZ com: node src/scripts/atualizarAdmin.js
-// Depois pode apagar ou guardar — não precisa rodar de novo.
-
 const atualizarAdmin = async () => {
   try {
-    if (!process.env.ADMIN_EMAIL) {
-      console.error('Erro: ADMIN_EMAIL não definido no .env');
-      process.exit(1);
+    const emailAntigo = process.env.ADMIN_EMAIL_OLD;
+    const emailNovo = process.env.ADMIN_EMAIL;
+    const mongoUri = process.env.MONGODB_URI;
+
+    if (!emailAntigo || !emailNovo || !mongoUri) {
+      throw new Error('Variáveis ADMIN_EMAIL_OLD, ADMIN_EMAIL ou MONGODB_URI não definidas.');
     }
 
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('MongoDB conectado ✅');
+    await mongoose.connect(mongoUri);
+    console.log('MongoDB conectado');
 
-    await Usuario.updateOne(
-      { email: 'admin@email.com' },       // email antigo
-      { email: process.env.ADMIN_EMAIL }, // email novo vindo do .env
+    const resultado = await Usuario.updateOne(
+      { email: emailAntigo },
+      { email: emailNovo }
     );
 
-    console.log('Email atualizado com sucesso ✅');
-    console.log(`Novo email: ${process.env.ADMIN_EMAIL}`);
-    console.log('Senha continua: 123456');
+    if (resultado.matchedCount === 0) {
+      console.log('Nenhum usuário encontrado com o email antigo.');
+      return;
+    }
+
+    console.log('Email do admin atualizado com sucesso.');
+    console.log(`Novo email: ${emailNovo}`);
   } catch (erro) {
     console.error('Erro ao atualizar admin:', erro.message);
   } finally {
     await mongoose.disconnect();
-    process.exit(0);
   }
 };
 
