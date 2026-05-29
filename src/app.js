@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const itemRoutes = require('./routes/itemRoutes');
 const logRoutes = require('./routes/logRoutes');
 const distanciaRoutes = require('./routes/distanciaRoutes');
+const exportRoutes = require('./routes/exportRoutes');
 
 const loggerMiddleware = require('./middlewares/loggerMiddleware');
 const weekdayMiddleware = require('./middlewares/weekdayMiddleware');
@@ -33,6 +34,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(loggerMiddleware);
+app.use(exportRoutes);
 
 app.get('/', (req, res) => {
   res.json({ mensagem: 'Stock Control API 🚀', status: 'online' });
@@ -43,6 +45,7 @@ app.use(weekdayMiddleware);
 app.use(itemRoutes);
 app.use(logRoutes);
 app.use(distanciaRoutes);
+app.use(exportRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ erro: 'Rota não encontrada' });
