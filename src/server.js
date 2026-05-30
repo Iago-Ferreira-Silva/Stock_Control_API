@@ -1,17 +1,19 @@
-const http     = require('http');
-const app      = require('./app');
-const conectar = require('./database/conexao');
-const cron     = require('node-cron');
+const http   = require('http');
+const app    = require('./app');
+const conectar            = require('./database/conexao');
+const cron                = require('node-cron');
 const { executarBackup }  = require('./services/backupService');
 const { iniciarSocket }   = require('./socket');
+const { iniciarSensorWS } = require('./sensorWS');
 
 conectar().then(() => {
-  // Cria o servidor HTTP a partir do Express
-  // O Socket.io precisa do servidor HTTP, não do Express diretamente
   const httpServer = http.createServer(app);
 
-  // Inicializa o Socket.io no servidor HTTP
+  // Inicializa o Socket.io (para o navegador)
   iniciarSocket(httpServer);
+
+  // Inicializa o WebSocket (para o ESP32/Wokwi)
+  iniciarSensorWS(httpServer);
 
   const PORT = process.env.PORT || 3000;
   httpServer.listen(PORT, () => {
