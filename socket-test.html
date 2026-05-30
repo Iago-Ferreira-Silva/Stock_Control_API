@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Stock Control — Teste Socket</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; background: #f4f4f4; }
+    h1   { color: #1B3A5C; }
+    #status { padding: 8px 16px; border-radius: 6px; display: inline-block; font-weight: bold; margin-bottom: 20px; }
+    .conectado    { background: #d4edda; color: #155724; }
+    .desconectado { background: #f8d7da; color: #721c24; }
+    #eventos { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 16px; min-height: 200px; max-height: 400px; overflow-y: auto; }
+    .evento  { padding: 8px; border-bottom: 1px solid #eee; font-size: 14px; }
+    .evento:last-child { border-bottom: none; }
+    .criado    { border-left: 4px solid #28a745; padding-left: 12px; }
+    .atualizado { border-left: 4px solid #007bff; padding-left: 12px; }
+    .deletado  { border-left: 4px solid #dc3545; padding-left: 12px; }
+    .hora { color: #999; font-size: 12px; margin-right: 8px; }
+  </style>
+</head>
+<body>
+  <h1>📦 Stock Control — Eventos em tempo real</h1>
+  <div id="status" class="desconectado">⚫ Desconectado</div>
+  <h3>Eventos recebidos:</h3>
+  <div id="eventos"><p style="color:#999">Aguardando eventos...</p></div>
+
+  <!-- Importa o cliente do Socket.io direto do servidor -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket   = io();
+    const status   = document.getElementById('status');
+    const eventos  = document.getElementById('eventos');
+
+    const hora = () => new Date().toLocaleTimeString('pt-BR');
+
+    const adicionarEvento = (tipo, mensagem) => {
+      if (eventos.querySelector('p')) eventos.innerHTML = '';
+      const div = document.createElement('div');
+      div.className = `evento ${tipo}`;
+      div.innerHTML = `<span class="hora">${hora()}</span>${mensagem}`;
+      eventos.prepend(div); // mais recente no topo
+    };
+
+    socket.on('connect', () => {
+      status.textContent = '🟢 Conectado';
+      status.className = 'conectado';
+    });
+
+    socket.on('disconnect', () => {
+      status.textContent = '⚫ Desconectado';
+      status.className = 'desconectado';
+    });
+
+    socket.on('item:criado', (data) => {
+      const item = Array.isArray(data) ? data[0] : data;
+      adicionarEvento('criado', `✅ Item criado: <strong>${item.nome}</strong> — R$ ${item.preco}`);
+    });
+
+    socket.on('item:atualizado', (data) => {
+      adicionarEvento('atualizado', `✏️ Item atualizado: <strong>${data.nome}</strong> — R$ ${data.preco}`);
+    });
+
+    socket.on('item:deletado', (data) => {
+      adicionarEvento('deletado', `🗑️ Item removido: <strong>${data.nome}</strong>`);
+    });
+
+    socket.on('sensor:dados', (data) => {
+      adicionarEvento('atualizado', `🌡️ Sensor: Temperatura <strong>${data.temperatura}°C</strong> | Umidade <strong>${data.umidade}%</strong>`);
+    });
+  </script>
+</body>
+</html>
