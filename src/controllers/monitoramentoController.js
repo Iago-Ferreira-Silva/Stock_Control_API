@@ -118,53 +118,70 @@ exports.relatorioMonitoramento = async (req, res) => {
     doc.moveDown(2);
 
     // Horário de pico
+    // Se não couber a seção inteira, abre nova página
+    if (doc.y > 550) {
+      doc.addPage();
+      doc.y = 50;
+    }
+
     doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#CCCCCC').stroke();
     doc.moveDown();
 
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#1B3A5C')
-       .text('Horário de pico de uso');
-    doc.moveDown(0.5);
+       .text('Horario de pico de uso', 50, doc.y, { width: 495, lineBreak: false });
+    doc.moveDown(0.8);
 
     // Caixa de destaque do pico
     const yPico = doc.y;
     doc.rect(50, yPico, 495, 60).fill('#E8F4F8');
     doc.fontSize(13).font('Helvetica-Bold').fillColor('#1B3A5C')
-       .text(`🕐  ${String(horaPico).padStart(2, '0')}:00 — ${String(horaPico + 1).padStart(2, '0')}:00`, 70, yPico + 10);
+       .text(`Pico: ${String(horaPico).padStart(2, '0')}:00 — ${String(horaPico + 1).padStart(2, '0')}:00`, 70, yPico + 10, { lineBreak: false });
     doc.fontSize(10).font('Helvetica').fillColor('#666666')
-       .text(`${totalPico} requisições nesse intervalo de hora`, 70, yPico + 32);
+       .text(`${totalPico} requisicoes nesse intervalo de hora`, 70, yPico + 32, { lineBreak: false });
 
-    // Distribuição por hora (barras de texto)
-    doc.moveDown(4);
+    // Distribuição por hora — verifica se cabe o título + primeiras barras
+    doc.y = yPico + 80;
+    if (doc.y > 700) {
+      doc.addPage();
+      doc.y = 50;
+    }
     doc.fontSize(12).font('Helvetica-Bold').fillColor('#1B3A5C')
-       .text('Distribuição de acessos por hora do dia:');
-    doc.moveDown(0.5);
+       .text('Distribuicao de acessos por hora do dia:', 50, doc.y, { width: 495, lineBreak: false });
+    doc.y += 20;
 
-    const maximo = Math.max(...contagemHoras);
+    const maximo   = Math.max(...contagemHoras);
+    const barraMax = 280;
+
     contagemHoras.forEach((count, hora) => {
       if (count === 0) return;
-      const barraMax  = 200;
-      const largura   = maximo > 0 ? Math.round((count / maximo) * barraMax) : 0;
-      const yBarra    = doc.y;
-      const destaque  = hora === horaPico;
 
-      doc.fontSize(9).font('Helvetica').fillColor(destaque ? '#1B3A5C' : '#666666')
+      if (doc.y > 730) {
+        doc.addPage();
+        doc.y = 50;
+      }
+
+      const largura  = maximo > 0 ? Math.round((count / maximo) * barraMax) : 2;
+      const yBarra   = doc.y;
+      const destaque = hora === horaPico;
+
+      doc.fontSize(9).font('Helvetica')
+         .fillColor(destaque ? '#1B3A5C' : '#555555')
          .text(`${String(hora).padStart(2, '0')}h`, 50, yBarra, { width: 30, lineBreak: false });
 
-      doc.rect(85, yBarra, largura, 12)
+      doc.rect(85, yBarra + 1, Math.max(largura, 2), 11)
          .fill(destaque ? '#0D7377' : '#B0C4D8');
 
       doc.fontSize(9).font('Helvetica').fillColor('#333333')
-         .text(String(count), 90 + largura, yBarra, { lineBreak: false });
+         .text(` ${count}`, 92 + largura, yBarra, { lineBreak: false });
 
-      doc.moveDown(0.6);
-
-      if (doc.y > 720) { doc.addPage(); }
+      doc.y = yBarra + 16;
     });
 
-    // Rodapé
+    // Rodapé — posicionado logo após o último conteúdo
     const dataGeracao = new Date().toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' });
+    doc.moveDown(1.5);
     doc.fontSize(8).font('Helvetica').fillColor('#999999')
-       .text(`Gerado em: ${dataGeracao}`, 50, 800, { align: 'right' });
+       .text(`Gerado em: ${dataGeracao}`, 50, doc.y, { align: 'right', width: 495 });
 
     doc.end();
   } catch (erro) {
