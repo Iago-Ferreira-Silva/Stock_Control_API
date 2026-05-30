@@ -3,13 +3,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-const authRoutes = require('./routes/authRoutes');
-const itemRoutes = require('./routes/itemRoutes');
-const logRoutes = require('./routes/logRoutes');
-const distanciaRoutes = require('./routes/distanciaRoutes');
-const exportRoutes = require('./routes/exportRoutes');
+const authRoutes         = require('./routes/authRoutes');
+const itemRoutes         = require('./routes/itemRoutes');
+const logRoutes          = require('./routes/logRoutes');
+const distanciaRoutes    = require('./routes/distanciaRoutes');
+const exportRoutes       = require('./routes/exportRoutes');
+const monitoramentoRoutes = require('./routes/monitoramentoRoutes');
 
-const loggerMiddleware = require('./middlewares/loggerMiddleware');
+const loggerMiddleware  = require('./middlewares/loggerMiddleware');
 const weekdayMiddleware = require('./middlewares/weekdayMiddleware');
 
 const app = express();
@@ -22,11 +23,8 @@ const origensPermitidas = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (origensPermitidas.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Origem não permitida pelo CORS'));
-    }
+    if (origensPermitidas.includes(origin)) return callback(null, true);
+    callback(new Error('Origem não permitida pelo CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -34,7 +32,6 @@ app.use(cors({
 
 app.use(express.json());
 app.use(loggerMiddleware);
-app.use(exportRoutes);
 
 app.get('/', (req, res) => {
   res.json({ mensagem: 'Stock Control API 🚀', status: 'online' });
@@ -46,6 +43,7 @@ app.use(itemRoutes);
 app.use(logRoutes);
 app.use(distanciaRoutes);
 app.use(exportRoutes);
+app.use(monitoramentoRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ erro: 'Rota não encontrada' });
