@@ -35,15 +35,17 @@ exports.criar = async (req, res) => {
       if (dados.length === 0) return res.status(400).json({ erro: 'Array vazio' });
       const itens = await Item.insertMany(dados, { runValidators: true });
 
-      // Avisa todos os clientes conectados que novos itens foram criados
-      getIO().emit('item:criado', itens);
+      const io = getIO();
+      if (io) io.emit('item:criado', itens);
+
       return res.status(201).json(itens);
     }
 
     const novoItem = await Item.create(dados);
 
-    // Avisa todos os clientes conectados que um novo item foi criado
-    getIO().emit('item:criado', novoItem);
+    const io = getIO();
+    if (io) io.emit('item:criado', novoItem);
+
     res.status(201).json(novoItem);
   } catch (erro) {
     if (erro.name === 'ValidationError') {
@@ -87,8 +89,9 @@ exports.atualizar = async (req, res) => {
 
     if (!item) return res.status(404).json({ erro: 'Item não encontrado' });
 
-    // Avisa todos os clientes conectados que um item foi atualizado
-    getIO().emit('item:atualizado', item);
+    const io = getIO();
+    if (io) io.emit('item:atualizado', item);
+
     res.json(item);
   } catch (erro) {
     if (erro.name === 'CastError') return res.status(400).json({ erro: 'ID inválido' });
@@ -106,8 +109,9 @@ exports.deletar = async (req, res) => {
     const item = await Item.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ erro: 'Item não encontrado' });
 
-    // Avisa todos os clientes conectados que um item foi removido
-    getIO().emit('item:deletado', { id: req.params.id, nome: item.nome });
+    const io = getIO();
+    if (io) io.emit('item:deletado', { id: req.params.id, nome: item.nome });
+
     res.json({ mensagem: 'Item removido com sucesso' });
   } catch (erro) {
     if (erro.name === 'CastError') return res.status(400).json({ erro: 'ID inválido' });
@@ -128,7 +132,9 @@ exports.uploadImagem = async (req, res) => {
 
     if (!item) return res.status(404).json({ erro: 'Item não encontrado' });
 
-    getIO().emit('item:atualizado', item);
+    const io = getIO();
+    if (io) io.emit('item:atualizado', item);
+
     res.json({ mensagem: 'Imagem enviada com sucesso', imagem: item.imagem, item });
   } catch (erro) {
     if (erro.name === 'CastError') return res.status(400).json({ erro: 'ID inválido' });

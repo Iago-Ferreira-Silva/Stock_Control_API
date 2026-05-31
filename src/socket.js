@@ -2,7 +2,6 @@ const { Server } = require('socket.io');
 
 let io;
 
-// Inicializa o Socket.io
 const iniciarSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
@@ -23,11 +22,8 @@ const iniciarSocket = (httpServer) => {
   return io;
 };
 
-// Retorna a instância do socket
-// Usado pelos controllers para emitir eventos sem precisar importar o servidor
 const getIO = () => {
-  if (!io) throw new Error('Socket.io não foi inicializado');
-  return io;
+  return io || null;
 };
 
 module.exports = { iniciarSocket, getIO };
