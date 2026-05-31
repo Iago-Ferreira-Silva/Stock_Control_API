@@ -10,6 +10,7 @@ const logRoutes           = require('./routes/logRoutes');
 const distanciaRoutes     = require('./routes/distanciaRoutes');
 const exportRoutes        = require('./routes/exportRoutes');
 const monitoramentoRoutes = require('./routes/monitoramentoRoutes');
+const videoRoutes         = require('./routes/videoRoutes');
 
 const loggerMiddleware  = require('./middlewares/loggerMiddleware');
 const weekdayMiddleware = require('./middlewares/weekdayMiddleware');
@@ -41,18 +42,23 @@ app.get('/', (req, res) => {
   res.json({ mensagem: 'Stock Control API 🚀', status: 'online' });
 });
 
-// Página de teste do Socket.io
+// Páginas de teste
 app.get('/socket-test', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'socket-test.html'));
 });
 
+app.get('/video-test', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'video-test.html'));
+});
+
 app.use('/logar', authRoutes);
-app.use(weekdayMiddleware);
+//app.use(weekdayMiddleware);
 app.use(itemRoutes);
 app.use(logRoutes);
 app.use(distanciaRoutes);
 app.use(exportRoutes);
 app.use(monitoramentoRoutes);
+app.use(videoRoutes);
 
 // 404
 app.use((req, res) => {

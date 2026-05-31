@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Stock Control — Stream de Vídeo</title>
+  <style>
+    body       { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #f4f4f4; }
+    h1         { color: #1B3A5C; }
+    input, button { padding: 8px 14px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; }
+    button     { background: #1B3A5C; color: white; border: none; cursor: pointer; margin-left: 8px; }
+    button:hover { background: #0D7377; }
+    #player    { width: 100%; border-radius: 10px; margin-top: 20px; background: #000; display: none; }
+    #lista     { margin-top: 20px; }
+    .video-item { background: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+    .video-item button { background: #0D7377; }
+    #erro      { color: #dc3545; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>🎬 Stream de Vídeo</h1>
+
+  <div>
+    <input type="text" id="token" placeholder="Cole seu token JWT aqui" style="width: 400px"/>
+    <button onclick="carregarVideos()">Carregar vídeos</button>
+  </div>
+
+  <p id="erro"></p>
+
+  <div id="lista"></div>
+
+  <video id="player" controls></video>
+
+  <script>
+    const erro  = document.getElementById('erro');
+    const lista = document.getElementById('lista');
+    const player = document.getElementById('player');
+
+    async function carregarVideos() {
+      const token = document.getElementById('token').value.trim();
+      if (!token) { erro.textContent = 'Informe o token JWT'; return; }
+
+      erro.textContent = '';
+
+      try {
+        const res  = await fetch('/video', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (!res.ok) { erro.textContent = data.erro; return; }
+
+        if (data.videos.length === 0) {
+          lista.innerHTML = '<p>Nenhum vídeo encontrado na pasta /videos</p>';
+          return;
+        }
+
+        lista.innerHTML = data.videos.map(v => `
+          <div class="video-item">
+            <span>🎬 ${v.nome} <small style="color:#999">(${v.tamanho})</small></span>
+            <button onclick="reproduzir('${v.url}', '${token}')">▶ Reproduzir</button>
+          </div>
+        `).join('');
+      } catch (e) {
+        erro.textContent = 'Erro ao conectar com o servidor';
+      }
+    }
+
+    function reproduzir(url, token) {
+      // Adiciona o token como query param pois o elemento <video>
+      // não permite customizar os headers da requisição
+      player.src = `${url}?token=${token}`;
+      player.style.display = 'block';
+      player.play();
+    }
+  </script>
+</body>
+</html>

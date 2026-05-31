@@ -27,6 +27,7 @@ temp/
 
 # Arquivos de cobertura de testes
 coverage/
+videos/
 
 # Cache
 .cache/
