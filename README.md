@@ -1,7 +1,7 @@
 # 📦 Stock Control API
 
 <p align="center">
-  API REST desenvolvida para <strong>gerenciamento de estoque de produtos</strong>, com autenticação JWT, segundo fator de autenticação por email, upload de imagens em nuvem, cálculo de distância geográfica e geração de relatórios em PDF.<br/>
+  API REST desenvolvida para <strong>gerenciamento de estoque de produtos</strong>, com autenticação JWT, 2FA por email, upload de imagens em nuvem, eventos em tempo real, stream de vídeo, sensor virtual e geração de relatórios em PDF.<br/>
   Desenvolvida com <code>Node.js</code>, <code>Express</code> e <code>JavaScript</code>.
 </p>
 
@@ -11,6 +11,7 @@
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"/>
   <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"/>
   <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socketdotio&logoColor=white"/>
   <img src="https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white"/>
   <img src="https://img.shields.io/badge/Resend-000000?style=for-the-badge&logoColor=white"/>
   <img src="https://img.shields.io/badge/Jest-C21325?style=for-the-badge&logo=jest&logoColor=white"/>
@@ -30,6 +31,12 @@
 * ❌ Remoção de produtos
 * 🔍 Busca de produto por ID
 * 🖼️ Upload de imagem para o Cloudinary vinculada ao produto
+* 📤 Exportação de todos os itens em formato CSV
+* 💾 Backup automático diário às 17h no Cloudinary em formato CSV
+* 📊 Relatório de monitoramento em PDF com acessos por rota e horário de pico
+* 🎬 Stream de vídeo com suporte a HTTP Range Requests
+* ⚡ Eventos em tempo real com Socket.io (criação, atualização e remoção de itens)
+* 🌡️ Dados em tempo real de sensor virtual (temperatura e umidade) via Wokwi + WebSocket
 * 📅 Middleware que restringe acesso de segunda a sexta
 * 🕒 Registro automático de logs de requisições no MongoDB
 * 📊 Consulta de logs por data com validação de formato
@@ -49,8 +56,11 @@ stock-control-api/
 │   ├── controllers/
 │   │   ├── authController.js
 │   │   ├── distanciaController.js
+│   │   ├── exportController.js
 │   │   ├── itemController.js
-│   │   └── logController.js
+│   │   ├── logController.js
+│   │   ├── monitoramentoController.js
+│   │   └── videoController.js
 │   ├── database/
 │   │   └── conexao.js
 │   ├── middlewares/
@@ -65,22 +75,31 @@ stock-control-api/
 │   ├── routes/
 │   │   ├── authRoutes.js
 │   │   ├── distanciaRoutes.js
+│   │   ├── exportRoutes.js
 │   │   ├── itemRoutes.js
-│   │   └── logRoutes.js
+│   │   ├── logRoutes.js
+│   │   ├── monitoramentoRoutes.js
+│   │   └── videoRoutes.js
 │   ├── scripts/
 │   │   ├── criarAdmin.js
 │   │   └── atualizarAdmin.js
 │   ├── services/
+│   │   ├── backupService.js
 │   │   ├── emailService.js
 │   │   └── pdfService.js
 │   ├── app.js
-│   └── server.js
+│   ├── sensor WS.js
+│   ├── server.js
+│   └── socket.js
 ├── tests/
 │   ├── auth.test.js
 │   ├── distancia.test.js
 │   ├── items.test.js
 │   ├── logs.test.js
 │   └── setup.js
+├── videos/               ← pasta local para vídeos (não commitada)
+├── socket-test.html
+├── video-test.html
 ├── .env.example
 ├── .gitignore
 ├── package.json
@@ -97,7 +116,10 @@ stock-control-api/
 * `bcrypt` — Criptografia de senhas
 * `jsonwebtoken` — Geração e validação de tokens JWT
 * `Resend` — Envio de emails para o segundo fator de autenticação
-* `Cloudinary + Multer` — Upload e armazenamento de imagens em nuvem
+* `Cloudinary + Multer` — Upload e armazenamento de imagens e backups em nuvem
+* `Socket.io` — Comunicação em tempo real entre servidor e navegador
+* `ws` — Servidor WebSocket para receber dados do ESP32/Wokwi
+* `node-cron` — Agendamento do backup automático diário
 * `PDFKit` — Geração de arquivos PDF em memória
 * `cors` — Controle de origens permitidas
 * `Jest + Supertest` — Testes automatizados das rotas
@@ -111,7 +133,8 @@ stock-control-api/
 * Código de verificação com validade de 10 minutos, descartado após o uso
 * Senhas armazenadas como hash bcrypt (salt rounds: 10)
 * Token JWT com validade de 1 hora no padrão `Bearer <token>`
-* Mensagens de erro distintas para token expirado vs. token inválido
+* Token também aceito via query string `?token=` para suporte ao player de vídeo
+* Mensagens de erro genéricas para não revelar qual campo falhou no login
 * `JWT_SECRET` configurável via variável de ambiente
 * CORS configurado para permitir apenas origens autorizadas
 * Acesso bloqueado aos finais de semana pelo `weekdayMiddleware`
@@ -128,14 +151,7 @@ stock-control-api/
 POST /logar
 ```
 ```json
-{
-  "email": "admin@email.com",
-  "senha": "123456"
-}
-```
-Resposta:
-```json
-{ "mensagem": "Código de verificação enviado para o seu email" }
+{ "email": "admin@email.com", "senha": "123456" }
 ```
 
 **Passo 2 — Verificar código recebido por email:**
@@ -143,45 +159,30 @@ Resposta:
 POST /logar/verificar
 ```
 ```json
-{
-  "email": "admin@email.com",
-  "codigo": "472831"
-}
-```
-Resposta:
-```json
-{ "token": "eyJhbGciOiJIUzI1NiIs..." }
+{ "email": "admin@email.com", "codigo": "472831" }
 ```
 
 ---
 
-### 🔹 Produtos — protegidas (requer `Authorization: Bearer <token>`)
+### 🔹 Produtos — protegidas
 
 ```
-GET    /itens                    → lista todos (aceita ?nome= e ?precoMin= ?precoMax=)
-POST   /itens                    → cria um ou vários itens
-GET    /itens/:id                → busca por ID
-PUT    /itens/:id                → atualiza nome e/ou preço
-DELETE /itens/:id                → remove item
-POST   /itens/:id/imagem         → upload de imagem (form-data, campo: imagem)
+GET    /itens                       → lista todos (?nome= ?precoMin= ?precoMax=)
+POST   /itens                       → cria um ou vários itens
+GET    /itens/:id                   → busca por ID
+PUT    /itens/:id                   → atualiza nome e/ou preço
+DELETE /itens/:id                   → remove item
+POST   /itens/:id/imagem            → upload de imagem (form-data, campo: imagem)
 ```
 
-**Body para POST (item único):**
-```json
-{ "nome": "Monitor", "preco": 899.90 }
-```
+---
 
-**Body para POST (vários itens):**
-```json
-[
-  { "nome": "Teclado", "preco": 150 },
-  { "nome": "Mouse", "preco": 80 }
-]
-```
+### 🔹 Exportação e relatórios — protegidas
 
-**Body para PUT (campos opcionais):**
-```json
-{ "nome": "Monitor Ultrawide", "preco": 1299.90 }
+```
+GET /exportar/csv                   → baixa todos os itens em CSV
+GET /relatorio/pdf                  → relatório de produtos em PDF
+GET /relatorio/monitoramento        → relatório de acessos por rota e horário de pico
 ```
 
 ---
@@ -200,59 +201,76 @@ GET /logs?data=YYYY-MM-DD
 GET /distancia?lat1=...&lon1=...&lat2=...&lon2=...
 ```
 
-**Exemplo — Crato para Fortaleza:**
-```
-GET /distancia?lat1=-7.2306&lon1=-39.3167&lat2=-3.7172&lon2=-38.5431
-```
+---
 
-Resposta:
-```json
-{
-  "pontoA": { "latitude": -7.2306, "longitude": -39.3167 },
-  "pontoB": { "latitude": -3.7172, "longitude": -38.5431 },
-  "distancia": { "km": 399.94, "metros": 399943 }
-}
+### 🔹 Vídeo — protegidas
+
+```
+GET /video                          → lista vídeos disponíveis
+GET /video/stream/:arquivo          → stream do vídeo (?token= para o player HTML)
 ```
 
 ---
 
-### 🔹 Relatório — protegida
+### 🔹 Páginas de teste — públicas
 
 ```
-GET /relatorio/pdf
+GET /socket-test                    → página de eventos em tempo real
+GET /video-test                     → player de vídeo
 ```
+
+---
+
+## ⚡ SOCKET.IO — EVENTOS EM TEMPO REAL
+
+O servidor emite eventos via Socket.io sempre que algo muda no estoque. Para visualizar, abra `/socket-test` no navegador.
+
+| Evento | Quando é emitido |
+|---|---|
+| `item:criado` | Novo item adicionado |
+| `item:atualizado` | Item editado ou imagem alterada |
+| `item:deletado` | Item removido |
+| `sensor:dados` | Novo dado recebido do sensor Wokwi |
+
+---
+
+## 🌡️ SENSOR VIRTUAL — WOKWI
+
+O ESP32 simulado no [Wokwi](https://wokwi.com) conecta via WebSocket em `wss://seu-servidor/sensor` e envia dados de temperatura e umidade a cada 3 segundos. Os dados são repassados em tempo real para todos os navegadores conectados via Socket.io.
+
+Para visualizar, abra `/socket-test` no navegador enquanto a simulação estiver rodando no Wokwi.
+
+---
+
+## 💾 BACKUP AUTOMÁTICO
+
+Um backup CSV de todos os itens é gerado automaticamente todos os dias às **17h (horário de Fortaleza)** e salvo no Cloudinary na pasta `stock-control/backups/` com o nome `backup_YYYY-MM-DD`.
 
 ---
 
 ## ⚙️ MIDDLEWARES
 
 ### 📅 Restrição por dia da semana (`weekdayMiddleware`)
-Bloqueia todas as rotas (exceto `/logar`) de sábado a domingo com status `403`. Ignorado automaticamente durante os testes.
+Bloqueia todas as rotas (exceto `/logar`) de sábado a domingo. Ignorado durante os testes.
 
 ### 🕒 Logger de requisições (`loggerMiddleware`)
 Registra rota, método HTTP e data/hora de cada requisição no MongoDB.
 
 ### 🔐 Autenticação (`authMiddleware`)
-Valida o token JWT no cabeçalho `Authorization` antes de liberar o acesso às rotas protegidas.
+Valida o token JWT no cabeçalho `Authorization` ou via query string `?token=`.
 
 ---
 
 ## ✅ TESTES AUTOMATIZADOS
 
-O projeto conta com testes automatizados usando **Jest** e **Supertest**, cobrindo todas as rotas da API.
-
-Para rodar os testes:
 ```bash
 npm test
 ```
 
-Resultado esperado:
 ```
 Test Suites: 4 passed, 4 total
 Tests:       30 passed, 30 total
 ```
-
-Os testes de itens criam documentos com prefixo `TESTE_JEST` e os removem após cada teste. O envio de email do 2FA é mockado — nenhum email real é disparado durante os testes.
 
 ---
 
@@ -260,12 +278,16 @@ Os testes de itens criam documentos com prefixo `TESTE_JEST` e os removem após 
 
 * 🔐 Implementação de autenticação em dois fatores com código temporário
 * 🧠 Criação e encadeamento de middlewares personalizados
-* 🕒 Registro e filtragem de logs por fuso horário no MongoDB
-* 📄 Geração dinâmica de arquivos PDF com formatação monetária
+* 🕒 Bug de fuso horário nos logs — resolvido com intervalo UTC para Fortaleza
+* 📄 Geração dinâmica de relatórios PDF com tabelas e gráficos de barras
 * 🔄 Organização do projeto em camadas (controllers, routes, services, middlewares, models)
 * ☁️ Integração com serviços externos (MongoDB Atlas, Cloudinary, Resend)
 * ⚙️ Controle de acesso por dias da semana sem bloquear o login nem os testes
 * 🧪 Separação do `app.js` e `server.js` para viabilizar os testes com Jest
+* ⚡ Integração do Socket.io com servidor HTTP para eventos em tempo real
+* 🌡️ Comunicação entre ESP32 simulado no Wokwi e servidor Node.js via WebSocket
+* 🎬 Implementação de streaming de vídeo com HTTP Range Requests
+* 💾 Agendamento de backup automático com node-cron
 * 🚀 Deploy e configuração de variáveis de ambiente no Render
 
 ---
@@ -276,13 +298,16 @@ Os testes de itens criam documentos com prefixo `TESTE_JEST` e os removem após 
 * Modelagem e persistência de dados com MongoDB e Mongoose
 * Autenticação com JWT e segundo fator de autenticação por email
 * Criptografia de senhas com bcrypt
-* Upload e armazenamento de imagens em nuvem com Cloudinary
+* Upload e armazenamento de arquivos em nuvem com Cloudinary
 * Envio de emails transacionais com Resend
+* Comunicação em tempo real com Socket.io e WebSocket
+* Integração com hardware virtual via Wokwi e ESP32
+* Streaming de vídeo com HTTP Range Requests
+* Backup automático agendado com node-cron
+* Exportação de dados em CSV
+* Geração de relatórios PDF com análise de logs
 * Cálculo de distância geográfica com a fórmula de Haversine
-* Implementação e encadeamento de middlewares
-* Configuração de CORS para controle de origens
 * Testes automatizados de APIs com Jest e Supertest
-* Estruturação de projetos backend em camadas
 * Deploy de aplicações Node.js com variáveis de ambiente no Render
 
 ---
@@ -326,28 +351,33 @@ node src/scripts/criarAdmin.js
 npm run dev
 ```
 
-A API estará disponível em:
-```
-http://localhost:3000
-```
+A API estará disponível em `http://localhost:3000`
 
 **6. Para rodar os testes:**
 ```bash
 npm test
 ```
 
+**7. Para testar o stream de vídeo:**
+
+Crie a pasta `videos/` na raiz do projeto e adicione um arquivo `.mp4`:
+```bash
+mkdir videos
+# Coloque um arquivo demo.mp4 dentro da pasta
+```
+
+> ⚠️ A pasta `videos/` está no `.gitignore` e não é commitada.
+
 ---
 
 ## 🔑 VARIÁVEIS DE AMBIENTE
 
-Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
-
 ```env
 MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/stock_control
 JWT_SECRET=chave_gerada_com_crypto
-ADMIN_EMAIL=seu_email@gmail.com        # email atual do admin
-ADMIN_EMAIL_OLD=email_antigo_aqui      # usado apenas no script atualizarAdmin.js
-ADMIN_PASSWORD=sua_senha_aqui          # usado apenas no script criarAdmin.js
+ADMIN_EMAIL=seu_email@gmail.com
+ADMIN_EMAIL_OLD=email_antigo (usado apenas no script atualizarAdmin)
+ADMIN_PASSWORD=sua_senha (usado apenas no script criarAdmin)
 CLOUDINARY_CLOUD_NAME=seu_cloud_name
 CLOUDINARY_API_KEY=sua_api_key
 CLOUDINARY_API_SECRET=seu_api_secret
