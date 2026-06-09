@@ -102,8 +102,6 @@ stock-control-api/
 │   ├── logs.test.js
 │   └── setup.js
 ├── videos/               ← pasta local para vídeos (não commitada)
-├── socket-test.html
-├── video-test.html
 ├── .env.example
 ├── .gitignore
 ├── package.json
@@ -220,18 +218,9 @@ GET /video/stream/:arquivo          → stream do vídeo (?token= para o player 
 
 ---
 
-### 🔹 Páginas de teste — públicas
-
-```
-GET /socket-test                    → página de eventos em tempo real
-GET /video-test                     → player de vídeo
-```
-
----
-
 ## ⚡ SOCKET.IO — EVENTOS EM TEMPO REAL
 
-O servidor emite eventos via Socket.io sempre que algo muda no estoque. Para visualizar, abra `/socket-test` no navegador.
+O servidor emite eventos via Socket.io sempre que algo muda no estoque.
 
 | Evento            | Quando é emitido                   |
 | ----------------- | ---------------------------------- |
@@ -245,8 +234,6 @@ O servidor emite eventos via Socket.io sempre que algo muda no estoque. Para vis
 ## 🌡️ SENSOR VIRTUAL — WOKWI
 
 O ESP32 simulado no [Wokwi](https://wokwi.com) conecta via WebSocket em `wss://seu-servidor/sensor` e envia dados de temperatura e umidade a cada 3 segundos. Os dados são repassados em tempo real para todos os navegadores conectados via Socket.io.
-
-Para visualizar, abra `/socket-test` no navegador enquanto a simulação estiver rodando no Wokwi.
 
 ---
 

@@ -52,15 +52,6 @@ app.get("/api-status", (req, res) => {
   res.json({ mensagem: "Stock Control API 🚀", status: "online" });
 });
 
-// Páginas de teste
-app.get("/socket-test", (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "socket-test.html"));
-});
-
-app.get("/video-test", (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "video-test.html"));
-});
-
 app.use("/logar", authRoutes);
 //app.use(weekdayMiddleware);
 app.use(itemRoutes);
