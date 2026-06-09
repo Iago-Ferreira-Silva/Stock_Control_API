@@ -1,4 +1,4 @@
-/* ─── Reset & Variables ─────────────────────────────────────────────────── */
+/* Reset & Variables */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -30,7 +30,7 @@ body {
   display: flex;
 }
 
-/* ─── Login overlay ─────────────────────────────────────────────────────── */
+/* Login overlay */
 #loginOverlay {
   position: fixed;
   inset: 0;
@@ -114,7 +114,7 @@ body {
   display: none;
 }
 
-/* ─── Sidebar ───────────────────────────────────────────────────────────── */
+/* Sidebar */
 #sidebar {
   width: 220px;
   min-height: 100vh;
@@ -168,7 +168,7 @@ body {
   50%       { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
 }
 
-/* ─── Main content ──────────────────────────────────────────────────────── */
+/* Main content */
 #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
 .topBar {
@@ -211,7 +211,7 @@ body {
 .section { display: none; }
 .section.active { display: block; }
 
-/* ─── Cards ─────────────────────────────────────────────────────────────── */
+/* Cards */
 .card {
   background: var(--white);
   border-radius: var(--radius);
@@ -231,7 +231,7 @@ body {
 }
 .cardTitle span { font-size: 16px; }
 
-/* ─── Buttons ────────────────────────────────────────────────────────────── */
+/* Buttons */
 .btn {
   padding: 8px 16px;
   border-radius: 7px;
@@ -252,7 +252,7 @@ body {
 .btnRed:hover   { background: #FEE2E2; }
 .btnSmall { padding: 5px 10px; font-size: 11px; border-radius: 5px; }
 
-/* ─── Table ──────────────────────────────────────────────────────────────── */
+/* Table */
 .tableWrap { overflow-x: auto; margin-top: 12px; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th {
@@ -298,7 +298,7 @@ tr:hover td { background: #F8FAFC; }
   color: var(--gray2);
 }
 
-/* ─── Form inline ────────────────────────────────────────────────────────── */
+/* Form inline */
 .formRow   { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
 .formField { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
 .formField label {
@@ -322,7 +322,7 @@ tr:hover td { background: #F8FAFC; }
 .formField input:focus,
 .formField select:focus { border-color: var(--teal); }
 
-/* ─── Modal ──────────────────────────────────────────────────────────────── */
+/* Modal */
 .modalBackdrop {
   display: none;
   position: fixed;
@@ -369,7 +369,7 @@ tr:hover td { background: #F8FAFC; }
 .modalRow input:focus { border-color: var(--teal); }
 .modalActions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
-/* ─── Events log ─────────────────────────────────────────────────────────── */
+/* Events log */
 #eventLog {
   min-height: 180px;
   max-height: 300px;
@@ -392,7 +392,7 @@ tr:hover td { background: #F8FAFC; }
 .evtDeletado   { color: #F87171; }
 .evtSensor     { color: #FBBF24; }
 
-/* ─── Sensor gauge ───────────────────────────────────────────────────────── */
+/* Sensor gauge */
 .sensorGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -410,7 +410,7 @@ tr:hover td { background: #F8FAFC; }
 .gaugeLabel { font-size: 11px; color: #4A6580; margin-top: 6px; text-transform: uppercase; letter-spacing: .06em; }
 .gaugeTs    { font-size: 10px; color: #334155; margin-top: 8px; }
 
-/* ─── Distance ───────────────────────────────────────────────────────────── */
+/* Distance */
 .distResult {
   margin-top: 20px;
   background: var(--mint);
@@ -422,7 +422,7 @@ tr:hover td { background: #F8FAFC; }
 .distKm     { font-size: 42px; font-weight: 800; color: var(--teal); }
 .distMetros { font-size: 14px; color: var(--gray); margin-top: 4px; }
 
-/* ─── Video ──────────────────────────────────────────────────────────────── */
+/* Video */
 #videoPlayer { width: 100%; border-radius: 8px; display: none; background: #000; margin-top: 16px; }
 .videoNote {
   background: #FFF7ED;
@@ -434,7 +434,7 @@ tr:hover td { background: #F8FAFC; }
   margin-bottom: 16px;
 }
 
-/* ─── Toast ──────────────────────────────────────────────────────────────── */
+/* Toast */
 #toast {
   position: fixed;
   bottom: 24px;
@@ -457,7 +457,7 @@ tr:hover td { background: #F8FAFC; }
 #toast.success { background: #166534; }
 #toast.error   { background: #991B1B; }
 
-/* ─── Misc ───────────────────────────────────────────────────────────────── */
+/* Misc */
 .empty { text-align: center; padding: 40px; color: var(--gray2); font-size: 13px; }
 .pageHeader {
   display: flex;

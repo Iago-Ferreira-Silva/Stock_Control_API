@@ -1,10 +1,10 @@
-const http   = require('http');
-const app    = require('./app');
-const conectar            = require('./database/conexao');
-const cron                = require('node-cron');
-const { executarBackup }  = require('./services/backupService');
-const { iniciarSocket }   = require('./socket');
-const { iniciarSensorWS } = require('./sensorWS');
+const http = require("http");
+const app = require("./app");
+const conectar = require("./database/conexao");
+const cron = require("node-cron");
+const { executarBackup } = require("./services/backupService");
+const { iniciarSocket } = require("./socket");
+const { iniciarSensorWS } = require("./sensorWS");
 
 conectar().then(() => {
   const httpServer = http.createServer(app);
@@ -20,10 +20,16 @@ conectar().then(() => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
 
-  // Backup automático diário às 17h (Fortaleza = UTC-3 = 20h UTC)
-  cron.schedule('0 20 * * *', () => {
-    executarBackup();
-  });
+  // Backup automático diário às 17h no horário de Fortaleza
+  cron.schedule(
+    "0 17 * * *",
+    () => {
+      executarBackup();
+    },
+    {
+      timezone: "America/Fortaleza",
+    },
+  );
 
-  console.log('Backup automatico agendado para as 17h (horario de Fortaleza)');
+  console.log("Backup automático agendado para as 17h (America/Fortaleza)");
 });

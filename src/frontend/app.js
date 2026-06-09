@@ -2,7 +2,7 @@ const API = "https://stock-control-api-f7em.onrender.com";
 let token = "";
 let socket = null;
 
-// ─── Navegação ───────────────────────────────────────────────────────────────
+// Navegação
 const pageTitles = {
   itens: ["Itens", "Gerencie o estoque de produtos"],
   exportar: ["Exportar CSV", "Baixe os dados em formato CSV"],
@@ -30,7 +30,7 @@ function navTo(id, el) {
   if (id === "logs") document.getElementById("logData").value = hoje();
 }
 
-// ─── Auth ────────────────────────────────────────────────────────────────────
+// Auth
 async function fazerLogin() {
   const email = document.getElementById("loginEmail").value.trim();
   const senha = document.getElementById("loginSenha").value;
@@ -127,7 +127,7 @@ function logout() {
   atualizarPulse("socketPulse", "socketStatus", false, "Socket off");
 }
 
-// ─── Socket.io ───────────────────────────────────────────────────────────────
+// Socket.io
 function conectarSocket() {
   socket = io(API, { auth: { token } });
 
@@ -192,7 +192,7 @@ function limparEventos() {
     '<div style="color:#334155;font-size:11px">Aguardando eventos...</div>';
 }
 
-// ─── API status ───────────────────────────────────────────────────────────────
+// API status
 async function verificarAPI() {
   try {
     const res = await fetch(`${API}/`);
@@ -208,7 +208,7 @@ function atualizarPulse(pulseId, labelId, on, label) {
   document.getElementById(labelId).textContent = label;
 }
 
-// ─── Itens ───────────────────────────────────────────────────────────────────
+// Itens
 async function carregarItens() {
   const nome = document.getElementById("filtroNome").value;
   const min = document.getElementById("filtroMin").value;
@@ -372,7 +372,7 @@ async function enviarImagem() {
   }
 }
 
-// ─── CSV / PDF ────────────────────────────────────────────────────────────────
+// CSV / PDF
 async function exportarCSV() {
   const res = await api(`${API}/exportar/csv`);
   if (!res.ok) {
@@ -404,7 +404,7 @@ function baixarBlob(blob, nome) {
   URL.revokeObjectURL(url);
 }
 
-// ─── Logs ─────────────────────────────────────────────────────────────────────
+// Logs
 async function buscarLogs() {
   const data = document.getElementById("logData").value;
   if (!data) {
@@ -441,7 +441,7 @@ async function buscarLogs() {
     .join("");
 }
 
-// ─── Distância ────────────────────────────────────────────────────────────────
+// Distância
 async function calcularDistancia() {
   const lat1 = document.getElementById("lat1").value;
   const lon1 = document.getElementById("lon1").value;
@@ -475,7 +475,7 @@ function preencherCratoFortaleza() {
   document.getElementById("lon2").value = "-38.5431";
 }
 
-// ─── Vídeo ────────────────────────────────────────────────────────────────────
+// Vídeo
 function carregarVideo() {
   const base = document.getElementById("videoBase").value.trim();
   const arquivo = document.getElementById("videoArquivo").value.trim();
@@ -487,7 +487,7 @@ function carregarVideo() {
   player.play().catch(() => {});
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// Helpers
 async function api(url, opts = {}) {
   const headers = {
     "Content-Type": "application/json",
@@ -524,7 +524,7 @@ function hoje() {
   return new Date().toISOString().split("T")[0];
 }
 
-// ─── Inicialização ────────────────────────────────────────────────────────────
+// Inicialização
 document.querySelectorAll(".modalBackdrop").forEach((m) => {
   m.addEventListener("click", (e) => {
     if (e.target === m) m.classList.remove("open");
