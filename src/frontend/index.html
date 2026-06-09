@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Control — Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <!-- ═══════════════ LOGIN ═══════════════ -->
+    <div id="loginOverlay">
+      <div class="loginBox">
+        <div class="loginLogo">
+          <div style="font-size: 40px">📦</div>
+          <h1>Stock Control API</h1>
+          <p>Dashboard de gerenciamento de estoque</p>
+        </div>
+
+        <!-- Passo 1: email + senha -->
+        <div class="loginStep active" id="step1">
+          <div class="formGroup">
+            <label>Email</label>
+            <input type="email" id="loginEmail" placeholder="admin@email.com" />
+          </div>
+          <div class="formGroup">
+            <label>Senha</label>
+            <input
+              type="password"
+              id="loginSenha"
+              placeholder="••••••••"
+              onkeydown="if (event.key === 'Enter') fazerLogin();"
+            />
+          </div>
+          <button class="btnPrimary" onclick="fazerLogin()" id="btnLogin">
+            Entrar
+          </button>
+          <div class="loginError" id="loginErr"></div>
+        </div>
+
+        <!-- Passo 2: código 2FA -->
+        <div class="loginStep" id="step2">
+          <div class="loginInfo">
+            Código enviado para o seu email. Válido por 10 minutos.
+          </div>
+          <div class="formGroup" style="margin-top: 16px">
+            <label>Código de verificação</label>
+            <input
+              type="text"
+              id="loginCodigo"
+              placeholder="000000"
+              maxlength="6"
+              style="letter-spacing: 0.4em; font-size: 20px; text-align: center"
+              onkeydown="if (event.key === 'Enter') verificarCodigo();"
+            />
+          </div>
+          <button
+            class="btnPrimary"
+            onclick="verificarCodigo()"
+            id="btnVerificar"
+          >
+            Verificar código
+          </button>
+          <div class="loginError" id="codigoErr"></div>
+          <p
+            style="
+              margin-top: 12px;
+              font-size: 12px;
+              color: var(--gray);
+              text-align: center;
+            "
+          >
+            <a href="#" onclick="voltarStep1()" style="color: var(--teal)"
+              >← Voltar</a
+            >
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ SIDEBAR ═══════════════ -->
+    <nav id="sidebar">
+      <div class="sidebarTop">
+        <h2>📦 Stock Control</h2>
+        <p>API Dashboard</p>
+      </div>
+      <div class="sidebarDivider"></div>
+
+      <div class="navItem active" onclick="navTo('itens', this)">
+        <span class="navIcon">📦</span> Itens
+      </div>
+      <div class="navItem" onclick="navTo('exportar', this)">
+        <span class="navIcon">📤</span> Exportar CSV
+      </div>
+      <div class="navItem" onclick="navTo('relatorios', this)">
+        <span class="navIcon">📊</span> Relatórios
+      </div>
+      <div class="navItem" onclick="navTo('tempo-real', this)">
+        <span class="navIcon">⚡</span> Tempo Real
+      </div>
+      <div class="navItem" onclick="navTo('sensor', this)">
+        <span class="navIcon">🌡️</span> Sensor Wokwi
+      </div>
+      <div class="navItem" onclick="navTo('video', this)">
+        <span class="navIcon">🎬</span> Vídeo
+      </div>
+      <div class="navItem" onclick="navTo('distancia', this)">
+        <span class="navIcon">📍</span> Distância
+      </div>
+      <div class="navItem" onclick="navTo('logs', this)">
+        <span class="navIcon">🕒</span> Logs
+      </div>
+
+      <div style="flex: 1"></div>
+      <div class="sidebarFooter">
+        <div>
+          <span class="pulse" id="apiPulse"></span
+          ><span id="apiStatus">Desconectado</span>
+        </div>
+        <div style="margin-top: 4px">
+          <span class="pulse" id="socketPulse"></span
+          ><span id="socketStatus">Socket off</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ═══════════════ MAIN ═══════════════ -->
+    <div id="main">
+      <div class="topBar">
+        <div>
+          <h3 id="pageTitle">Itens</h3>
+          <small id="pageDesc">Gerencie o estoque de produtos</small>
+        </div>
+        <div class="topRight">
+          <span id="tokenBadge">Sem token</span>
+          <button class="btnLogout" onclick="logout()">Sair</button>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- ── ITENS ── -->
+        <div class="section active" id="sec-itens">
+          <div class="pageHeader">
+            <div class="statsRow" id="itenStats"></div>
+            <button class="btn btnTeal" onclick="abrirModalCriar()">
+              + Novo item
+            </button>
+          </div>
+          <div class="card" style="padding: 16px 20px">
+            <div class="filterRow">
+              <div class="formField">
+                <label>Buscar por nome</label>
+                <input
+                  type="text"
+                  id="filtroNome"
+                  placeholder="ex: teclado"
+                  oninput="carregarItens()"
+                />
+              </div>
+              <div class="formField" style="max-width: 130px">
+                <label>Preço mínimo</label>
+                <input
+                  type="number"
+                  id="filtroMin"
+                  placeholder="0"
+                  oninput="carregarItens()"
+                />
+              </div>
+              <div class="formField" style="max-width: 130px">
+                <label>Preço máximo</label>
+                <input
+                  type="number"
+                  id="filtroMax"
+                  placeholder="9999"
+                  oninput="carregarItens()"
+                />
+              </div>
+              <button class="btn btnGhost" onclick="limparFiltros()">
+                Limpar
+              </button>
+            </div>
+          </div>
+          <div class="card" style="padding: 0">
+            <div class="tableWrap">
+              <table id="tabelaItens">
+                <thead>
+                  <tr>
+                    <th>Imagem</th>
+                    <th>Nome</th>
+                    <th>Preço</th>
+                    <th>Criado em</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyItens">
+                  <tr>
+                    <td colspan="5" class="empty">Carregando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── EXPORTAR CSV ── -->
+        <div class="section" id="sec-exportar">
+          <div class="card">
+            <div class="cardTitle"><span>📤</span> Exportar dados em CSV</div>
+            <p
+              style="
+                font-size: 13px;
+                color: var(--gray);
+                margin-bottom: 20px;
+                line-height: 1.6;
+              "
+            >
+              Baixa todos os itens do banco em formato <strong>CSV</strong>,
+              compatível com Excel e Google Sheets. O arquivo inclui ID, nome,
+              preço, URL da imagem e datas de criação e atualização.
+            </p>
+            <button class="btn btnTeal" onclick="exportarCSV()">
+              ⬇ Baixar CSV
+            </button>
+          </div>
+          <div
+            class="card"
+            style="background: var(--navy); border-color: var(--navy)"
+          >
+            <p style="font-size: 11px; color: #94a3b8; font-family: monospace">
+              GET /exportar/csv<br />
+              → Content-Type: text/csv<br />
+              → Content-Disposition: attachment;
+              filename="itens_YYYY-MM-DD.csv"<br />
+              → BOM (\uFEFF) incluído para compatibilidade com Excel
+            </p>
+          </div>
+        </div>
+
+        <!-- ── RELATÓRIOS ── -->
+        <div class="section" id="sec-relatorios">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+            <div class="card">
+              <div class="cardTitle"><span>📄</span> Relatório de Produtos</div>
+              <p
+                style="
+                  font-size: 13px;
+                  color: var(--gray);
+                  margin-bottom: 20px;
+                  line-height: 1.6;
+                "
+              >
+                Gera um PDF com todos os produtos cadastrados, formatado com
+                cabeçalho e preços em Real.
+              </p>
+              <button
+                class="btn btnTeal"
+                onclick="baixarPDF('/relatorio/pdf', 'relatorio_produtos.pdf')"
+              >
+                ⬇ Baixar PDF
+              </button>
+            </div>
+            <div class="card">
+              <div class="cardTitle">
+                <span>📊</span> Relatório de Monitoramento
+              </div>
+              <p
+                style="
+                  font-size: 13px;
+                  color: var(--gray);
+                  margin-bottom: 20px;
+                  line-height: 1.6;
+                "
+              >
+                Gera um PDF com análise de logs do mês atual: acessos por rota e
+                horário de pico de uso.
+              </p>
+              <button
+                class="btn btnNavy"
+                onclick="
+                  baixarPDF('/relatorio/monitoramento', 'monitoramento.pdf')
+                "
+              >
+                ⬇ Baixar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TEMPO REAL ── -->
+        <div class="section" id="sec-tempo-real">
+          <div class="card">
+            <div class="cardTitle" style="justify-content: space-between">
+              <div><span>⚡</span> Eventos em tempo real (Socket.io)</div>
+              <button class="btn btnGhost btnSmall" onclick="limparEventos()">
+                Limpar
+              </button>
+            </div>
+            <p style="font-size: 12px; color: var(--gray); margin-bottom: 14px">
+              Conectado ao Socket.io. Crie, edite ou remova itens para ver os
+              eventos aparecerem aqui em tempo real.
+            </p>
+            <div id="eventLog">
+              <div style="color: #334155; font-size: 11px">
+                Aguardando eventos...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SENSOR WOKWI ── -->
+        <div class="section" id="sec-sensor">
+          <div class="card">
+            <div class="cardTitle">
+              <span>🌡️</span> Sensor virtual — Wokwi ESP32 + DHT22
+            </div>
+            <p style="font-size: 12px; color: var(--gray); margin-bottom: 4px">
+              Dados enviados pelo ESP32 simulado no Wokwi via WebSocket →
+              repassados pelo Socket.io em tempo real.
+            </p>
+            <div class="sensorGrid">
+              <div class="gauge">
+                <div>
+                  <span class="gaugeValue" id="sensorTemp">--</span
+                  ><span class="gaugeUnit">°C</span>
+                </div>
+                <div class="gaugeLabel">Temperatura</div>
+              </div>
+              <div class="gauge">
+                <div>
+                  <span class="gaugeValue" id="sensorUmid">--</span
+                  ><span class="gaugeUnit">%</span>
+                </div>
+                <div class="gaugeLabel">Umidade</div>
+              </div>
+            </div>
+            <div
+              class="gaugeTs"
+              style="text-align: right; margin-top: 8px"
+              id="sensorTs"
+            >
+              Sem dados recebidos
+            </div>
+          </div>
+        </div>
+
+        <!-- ── VÍDEO ── -->
+        <div class="section" id="sec-video">
+          <div class="videoNote">
+            ⚠️ O stream de vídeo funciona apenas com o servidor rodando
+            localmente (<code>http://localhost:3000</code>). A pasta
+            <code>videos/</code> está no <code>.gitignore</code> e não é enviada
+            ao Render.
+          </div>
+          <div class="card">
+            <div class="cardTitle">
+              <span>🎬</span> Stream de vídeo (HTTP Range Requests)
+            </div>
+            <div class="formRow" style="margin-bottom: 12px">
+              <div class="formField">
+                <label>URL local do servidor</label>
+                <input
+                  type="text"
+                  id="videoBase"
+                  value="http://localhost:3000"
+                />
+              </div>
+              <div class="formField">
+                <label>Nome do arquivo</label>
+                <input type="text" id="videoArquivo" value="demo.mp4" />
+              </div>
+              <button class="btn btnTeal" onclick="carregarVideo()">
+                ▶ Reproduzir
+              </button>
+            </div>
+            <video id="videoPlayer" controls></video>
+            <p style="font-size: 11px; color: var(--gray2); margin-top: 12px">
+              O status HTTP 206 (Partial Content) no DevTools confirma que o
+              streaming por chunks está funcionando.
+            </p>
+          </div>
+        </div>
+
+        <!-- ── DISTÂNCIA ── -->
+        <div class="section" id="sec-distancia">
+          <div class="card">
+            <div class="cardTitle">
+              <span>📍</span> Calcular distância geográfica (Haversine)
+            </div>
+            <p style="font-size: 12px; color: var(--gray); margin-bottom: 20px">
+              Informe as coordenadas de dois pontos para calcular a distância
+              real na superfície da Terra.
+            </p>
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px"
+            >
+              <div>
+                <p
+                  style="
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: var(--gray);
+                    margin-bottom: 10px;
+                    text-transform: uppercase;
+                  "
+                >
+                  Ponto A
+                </p>
+                <div class="formRow">
+                  <div class="formField">
+                    <label>Latitude</label
+                    ><input
+                      type="number"
+                      id="lat1"
+                      placeholder="-7.2306"
+                      step="any"
+                    />
+                  </div>
+                  <div class="formField">
+                    <label>Longitude</label
+                    ><input
+                      type="number"
+                      id="lon1"
+                      placeholder="-39.3167"
+                      step="any"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p
+                  style="
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: var(--gray);
+                    margin-bottom: 10px;
+                    text-transform: uppercase;
+                  "
+                >
+                  Ponto B
+                </p>
+                <div class="formRow">
+                  <div class="formField">
+                    <label>Latitude</label
+                    ><input
+                      type="number"
+                      id="lat2"
+                      placeholder="-3.7172"
+                      step="any"
+                    />
+                  </div>
+                  <div class="formField">
+                    <label>Longitude</label
+                    ><input
+                      type="number"
+                      id="lon2"
+                      placeholder="-38.5431"
+                      step="any"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                margin-top: 16px;
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+              "
+            >
+              <button class="btn btnTeal" onclick="calcularDistancia()">
+                Calcular distância
+              </button>
+              <button class="btn btnGhost" onclick="preencherCratoFortaleza()">
+                Exemplo: Crato → Fortaleza
+              </button>
+            </div>
+            <div class="distResult" id="distResult">
+              <div class="distKm" id="distKm">0</div>
+              <div
+                style="font-size: 12px; color: var(--gray2); margin-top: 2px"
+              >
+                quilômetros
+              </div>
+              <div class="distMetros" id="distMetros"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── LOGS ── -->
+        <div class="section" id="sec-logs">
+          <div class="card">
+            <div class="cardTitle"><span>🕒</span> Consultar logs</div>
+            <div class="formRow" style="margin-bottom: 16px">
+              <div class="formField" style="max-width: 200px">
+                <label>Data</label>
+                <input type="date" id="logData" />
+              </div>
+              <button class="btn btnTeal" onclick="buscarLogs()">Buscar</button>
+            </div>
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Rota</th>
+                    <th>Método</th>
+                    <th>Data/Hora</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyLogs">
+                  <tr>
+                    <td colspan="3" class="empty">Selecione uma data</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /content -->
+    </div>
+    <!-- /main -->
+
+    <!-- ═══════════════ MODAIS ═══════════════ -->
+    <div class="modalBackdrop" id="modalItem">
+      <div class="modal">
+        <div class="modalTitle" id="modalItemTitle">Novo item</div>
+        <input type="hidden" id="itemId" />
+        <div class="modalRow">
+          <label>Nome</label>
+          <input type="text" id="itemNome" placeholder="ex: Teclado Mecânico" />
+        </div>
+        <div class="modalRow">
+          <label>Preço (R$)</label>
+          <input type="number" id="itemPreco" placeholder="0.00" step="0.01" />
+        </div>
+        <div class="modalActions">
+          <button class="btn btnGhost" onclick="fecharModal('modalItem')">
+            Cancelar
+          </button>
+          <button class="btn btnTeal" onclick="salvarItem()" id="btnSalvarItem">
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="modalImagem">
+      <div class="modal">
+        <div class="modalTitle">Upload de imagem</div>
+        <input type="hidden" id="imagemItemId" />
+        <div class="modalRow">
+          <label>Selecione uma imagem</label>
+          <input
+            type="file"
+            id="imagemArquivo"
+            accept="image/*"
+            style="
+              padding: 8px;
+              border: 1.5px solid var(--border);
+              border-radius: 7px;
+              width: 100%;
+              font-size: 13px;
+            "
+          />
+        </div>
+        <div class="modalActions">
+          <button class="btn btnGhost" onclick="fecharModal('modalImagem')">
+            Cancelar
+          </button>
+          <button class="btn btnTeal" onclick="enviarImagem()">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
